@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>GaunCode Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3efe6;--surface:#fff;--ink:#1f1f1c;--muted:#5f5d55;--line:#2a2a26;--green:#2f5d46;--soft:#dfe8dc;--red:#c2412d;--rule:#d9d4c4;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1a17;--surface:#24231f;--ink:#f1ede2;--muted:#b0ada0;--line:#8a877b;--green:#9cc9ae;--soft:#26382d;--red:#ff8a73;--rule:#44413a;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,sans-serif;line-height:1.5}
+.mono,button,input,select,textarea,.pill,small{font-family:'IBM Plex Mono',ui-monospace,monospace}
+h1{font-size:1.9rem;letter-spacing:-.03em;margin:.2em 0 .6em}h2{font-size:1.1rem;margin:1.4em 0 .6em}
+.brand{font-weight:800;font-size:1.4rem;letter-spacing:-.03em;padding:14px 16px}.brand span{color:var(--green)}.brand small{font-size:.65rem;margin-left:8px;border:1px solid var(--green);background:var(--soft);padding:2px 6px;border-radius:3px;vertical-align:middle}
+.shell{min-height:100vh}aside{border-bottom:1px solid var(--line);background:var(--bg)}
+nav{display:flex;gap:4px;overflow-x:auto;padding:0 12px 10px}nav a{white-space:nowrap;text-decoration:none;color:var(--ink);font:600 .85rem 'IBM Plex Mono',monospace;padding:12px 14px;border-radius:4px;border:1px solid transparent}nav a.on{border-color:var(--line);background:var(--soft)}
+main{padding:18px 16px 60px;max-width:860px}
+@media(min-width:800px){.shell{display:grid;grid-template-columns:230px 1fr}aside{border-right:1px solid var(--line);border-bottom:0;min-height:100vh}nav{flex-direction:column;padding:0 12px}main{padding:30px 36px}}
+.btn,button{min-height:46px;padding:10px 18px;font:600 .85rem 'IBM Plex Mono',monospace;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.primary{background:var(--ink);color:var(--bg)}.danger{color:var(--red);border-color:var(--red)}button:disabled{opacity:.5}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}@media(min-width:600px){.cards{grid-template-columns:repeat(4,1fr)}}
+.stat{border:1px solid var(--line);padding:14px;border-radius:4px;background:var(--surface)}.stat b{display:block;font-size:2rem;line-height:1}.stat small{color:var(--muted)}
+.item{border:1px solid var(--line);background:var(--surface);border-radius:4px;padding:14px;margin-bottom:10px}.item h3{margin:0 0 4px;font-size:1.1rem}.item small{color:var(--muted)}.item .row{margin:10px 0 0}.item .btn,.item button{min-height:42px;padding:8px 12px}
+.pill{font-size:.68rem;font-weight:600;text-transform:uppercase;padding:2px 8px;border-radius:3px;border:1px solid var(--green);background:var(--soft);margin-right:6px}.pill.draft{border-style:dashed;background:transparent;border-color:var(--muted)}
+label{display:block;font:600 .78rem 'IBM Plex Mono',monospace;margin:16px 0 6px}
+input,select,textarea{width:100%;padding:12px;font-size:1rem;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink)}textarea{min-height:110px}textarea.big{min-height:240px}
+.preview{max-width:100%;max-height:220px;border:1px solid var(--line);border-radius:4px;margin-top:10px;display:block}
+.err{color:var(--red);font:500 .85rem 'IBM Plex Mono',monospace;margin-top:8px}.login{max-width:380px;margin:12vh auto;padding:0 20px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:4px;font:500 .85rem 'IBM Plex Mono',monospace;z-index:9}
+</style></head><body><div id="app"></div>
+<script src="../config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const C=window.GC_CONFIG||{},app=document.getElementById('app'),BUCKET='gauncode-media';
+if(!C.SUPABASE_URL||/YOUR_/.test(C.SUPABASE_URL)){app.textContent='Setup needed: add your Supabase URL and key in config.js (see README).';throw 0}
+const sb=supabase.createClient(C.SUPABASE_URL,C.SUPABASE_ANON_KEY);
+const h=(t,a={},...k)=>{const e=document.createElement(t);for(const[n,v]of Object.entries(a)){if(n==='class')e.className=v;else if(n.startsWith('on'))e.addEventListener(n.slice(2),v);else if(v!==false&&v!=null)e.setAttribute(n,v===true?'':v)}for(const c of k.flat())if(c!=null)e.append(c.nodeType?c:document.createTextNode(c));return e};
+const toast=m=>{const t=h('div',{class:'toast'},m);document.body.append(t);setTimeout(()=>t.remove(),3500)};
+const fail=(e,m='Something went wrong. Please try again.')=>{console.error(e);toast(m)};
+const fmt=d=>d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'';
+const imgUrl=p=>p?sb.storage.from(BUCKET).getPublicUrl(p).data.publicUrl:null;
+const KINDS={projects:{one:'Project',f:[['title','Title *','text'],['summary','Short summary (shown on the card)','textarea'],['description','Full description','big'],['location','Location','text'],['project_date','Project date','date']]},
+ stories:{one:'Story',f:[['title','Title *','text'],['category','Category','select'],['excerpt','Short introduction','textarea'],['body','Full story','big'],['published_at','Publication date','date']]}};
+let dirty=false;addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+function shell(active,...c){app.replaceChildren(h('div',{class:'shell'},h('aside',{},h('div',{class:'brand'},'Gaun',h('span',{},'Code'),h('small',{},'ADMIN')),
+ h('nav',{},...['dashboard','projects','stories'].map(k=>h('a',{href:'#/'+k,class:active===k?'on':''},k[0].toUpperCase()+k.slice(1))),
+  h('a',{href:'../',target:'_blank',rel:'noopener'},'View site ↗'),h('a',{href:'#',onclick:e=>{e.preventDefault();sb.auth.signOut()}},'Log out'))),h('main',{},...c)))}
+
+function login(){const em=h('input',{type:'email',autocomplete:'username',required:true}),pw=h('input',{type:'password',autocomplete:'current-password',required:true}),er=h('div',{class:'err'}),go=h('button',{class:'primary',type:'submit',style:'width:100%;margin-top:20px'},'Log in');
+ app.replaceChildren(h('div',{class:'login'},h('div',{class:'brand',style:'padding-left:0'},'Gaun',h('span',{},'Code'),h('small',{},'ADMIN')),h('form',{onsubmit:async e=>{e.preventDefault();go.disabled=true;er.textContent='';
+  const{error}=await sb.auth.signInWithPassword({email:em.value.trim(),password:pw.value});go.disabled=false;if(error){er.textContent='Wrong email or password. Please try again.';console.error(error.message)}}},
+  h('label',{},'Email'),em,h('label',{},'Password'),pw,er,go)))}
+
+async function dashboard(){shell('dashboard',h('h1',{},'Welcome back'),h('p',{},'Loading…'));
+ const cnt=async(t,s)=>(await sb.from(t).select('id',{count:'exact',head:true}).eq('status',s)).count||0;
+ try{const[a,b,c,d]=await Promise.all([cnt('projects','published'),cnt('projects','draft'),cnt('stories','published'),cnt('stories','draft')]);
+ const rec=await Promise.all(['projects','stories'].map(async k=>((await sb.from(k).select('id,title,status,updated_at').order('updated_at',{ascending:false}).limit(5)).data||[]).map(r=>({...r,k}))));
+ const all=rec.flat().sort((x,y)=>y.updated_at.localeCompare(x.updated_at)).slice(0,6);
+ shell('dashboard',h('h1',{},'Welcome back'),h('div',{class:'row'},h('a',{class:'btn primary',href:'#/projects/new'},'+ Add project'),h('a',{class:'btn primary',href:'#/stories/new'},'+ Add story'),h('a',{class:'btn',href:'#/projects'},'Manage content')),
+  h('div',{class:'cards'},...[[a,'Published projects'],[b,'Draft projects'],[c,'Published stories'],[d,'Draft stories']].map(([n,l])=>h('div',{class:'stat'},h('b',{},n),h('small',{},l)))),
+  h('h2',{},'Recent content'),...(all.length?all.map(r=>h('a',{class:'item',style:'display:block;color:inherit;text-decoration:none',href:`#/${r.k}/${r.id}`},h('h3',{},r.title),h('span',{class:'pill '+r.status},r.status),h('small',{},KINDS[r.k].one+' · updated '+fmt(r.updated_at)))):[h('p',{},'Nothing yet. Add your first project or story!')]))
+ }catch(e){fail(e,'Could not load the dashboard. Check your connection.')}}
+
+async function list(kind){const K=KINDS[kind];shell(kind,h('h1',{},K.one+'s'),h('p',{},'Loading…'));
+ const{data,error}=await sb.from(kind).select('id,title,status,updated_at,cover_image_path').order('updated_at',{ascending:false});if(error)return fail(error);
+ const q=h('input',{placeholder:'Search by title…',type:'search'}),st=h('select',{},h('option',{value:''},'All statuses'),h('option',{value:'draft'},'Drafts'),h('option',{value:'published'},'Published')),box=h('div');
+ const draw=()=>{const rows=data.filter(r=>r.title.toLowerCase().includes(q.value.toLowerCase())&&(!st.value||r.status===st.value));
+  box.replaceChildren(...(rows.length?rows.map(r=>h('div',{class:'item'},h('h3',{},r.title),h('span',{class:'pill '+r.status},r.status),h('small',{},'Updated '+fmt(r.updated_at)),
+   h('div',{class:'row'},h('a',{class:'btn',href:`#/${kind}/${r.id}`},'Edit'),
+    h('button',{onclick:async()=>{const s=r.status==='published'?'draft':'published',p={status:s};if(kind==='stories'&&s==='published')p.published_at=new Date().toISOString();
+      const{error}=await sb.from(kind).update(p).eq('id',r.id);if(error)return fail(error);toast(s==='published'?'Published':'Unpublished');list(kind)}},r.status==='published'?'Unpublish':'Publish'),
+    h('button',{class:'danger',onclick:async()=>{if(!confirm(`Delete "${r.title}" permanently? This cannot be undone.`))return;
+      const{error}=await sb.from(kind).delete().eq('id',r.id);if(error)return fail(error);if(r.cover_image_path)await sb.storage.from(BUCKET).remove([r.cover_image_path]);toast('Deleted');list(kind)}},'Delete')))):[h('p',{},'No items found.')])};
+ q.oninput=st.onchange=draw;shell(kind,h('h1',{},K.one+'s'),h('div',{class:'row'},h('a',{class:'btn primary',href:`#/${kind}/new`},'+ Add '+K.one.toLowerCase())),q,h('div',{style:'height:10px'}),st,h('div',{style:'height:14px'}),box);draw()}
+
+async function form(kind,id){const K=KINDS[kind];let old={};
+ if(id!=='new'){const{data,error}=await sb.from(kind).select('*').eq('id',id).single();if(error||!data){toast('Item not found');return location.hash='#/'+kind}old=data}
+ const ins={};let file=null;dirty=false;const er=h('div',{class:'err'});
+ const fields=K.f.map(([k,l,t])=>{let i,v=old[k]??'';if(k==='published_at'&&v)v=v.slice(0,10);if(k==='project_date'&&v)v=v.slice(0,10);
+  if(t==='select')i=h('select',{},...['Community Story','Announcement'].map(o=>h('option',{value:o,selected:o===old.category},o)));
+  else if(t==='textarea'||t==='big')i=h('textarea',{class:t==='big'?'big':''},v);else i=h('input',{type:t,value:v,maxlength:k==='title'?200:null});
+  i.addEventListener('input',()=>dirty=true);ins[k]=i;return[h('label',{},l),i]});
+ const pv=h('img',{class:'preview',alt:'Cover preview',style:old.cover_image_path?'':'display:none',src:imgUrl(old.cover_image_path)||''});
+ const pick=h('input',{type:'file',accept:'image/jpeg,image/png,image/webp',onchange:e=>{const f=e.target.files[0];er.textContent='';if(!f)return;
+  if(!['image/jpeg','image/png','image/webp'].includes(f.type)){er.textContent='Please choose a JPG, PNG or WebP photo.';e.target.value='';return}
+  if(f.size>5*1024*1024){er.textContent='That photo is over 5 MB. Please choose a smaller one.';e.target.value='';return}
+  file=f;dirty=true;pv.src=URL.createObjectURL(f);pv.style.display='block'}});
+ const save=async status=>{er.textContent='';const v={};for(const[k]of K.f)v[k]=ins[k].value.trim()||null;
+  if(!v.title){er.textContent='Please enter a title.';ins.title.focus();return}
+  if(kind==='stories'){v.published_at=v.published_at?new Date(v.published_at).toISOString():(status==='published'?new Date().toISOString():old.published_at||null)}
+  v.status=status;btns.forEach(b=>b.disabled=true);btns[0].textContent='Saving…';let newPath=null;
+  try{if(file){newPath=`${kind}/${crypto.randomUUID()}.${file.type.split('/')[1].replace('jpeg','jpg')}`;
+    const{error}=await sb.storage.from(BUCKET).upload(newPath,file,{contentType:file.type,cacheControl:'3600'});if(error)throw error;v.cover_image_path=newPath}
+   const r=id==='new'?await sb.from(kind).insert(v):await sb.from(kind).update(v).eq('id',id);if(r.error)throw r.error;
+   if(newPath&&old.cover_image_path)await sb.storage.from(BUCKET).remove([old.cover_image_path]);
+   dirty=false;toast(status==='published'?'Saved & published':'Saved as draft');location.hash='#/'+kind}
+  catch(e){console.error(e);if(newPath)sb.storage.from(BUCKET).remove([newPath]);er.textContent='Could not save. Please check your connection and try again.';btns.forEach(b=>b.disabled=false);btns[0].textContent=lab[0]}};
+ const pub=old.status==='published',lab=pub?['Save changes','Unpublish (make draft)']:['Save as draft','Publish'],
+  btns=[h('button',{class:'primary',onclick:()=>save(pub?'published':'draft')},lab[0]),h('button',{onclick:()=>save(pub?'draft':'published')},lab[1]),
+   h('button',{onclick:()=>{if(!dirty||confirm('Leave without saving?')){dirty=false;location.hash='#/'+kind}}},'Cancel')];
+ shell(kind,h('h1',{},(id==='new'?'New ':'Edit ')+K.one.toLowerCase()),...fields.flat(),h('label',{},'Cover photo (JPG, PNG or WebP, max 5 MB)'),pick,pv,er,h('div',{class:'row'},...btns))}
+
+async function route(){const{data:{session}}=await sb.auth.getSession();if(!session)return login();
+ const[,sec,id]=(location.hash||'#/dashboard').split('/');if(sec==='projects'||sec==='stories')return id?form(sec,id):list(sec);dashboard()}
+addEventListener('hashchange',route);sb.auth.onAuthStateChange(()=>route());route();
+</script></body></html>
